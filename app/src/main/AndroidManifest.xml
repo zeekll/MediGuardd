@@ -2,6 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.SEND_SMS" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
 
     <application
         android:allowBackup="true"
@@ -80,6 +83,11 @@
         <!-- Reminder Trigger (AlarmManager fires this at dose time) -->
         <receiver
             android:name=".ReminderTriggerReceiver"
+            android:exported="false" />
+
+        <!-- Miss-Check Deadline (AlarmManager fires this if a dose isn't confirmed in time) -->
+        <receiver
+            android:name=".DoseMissCheckReceiver"
             android:exported="false" />
 
         <provider

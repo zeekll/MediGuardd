@@ -661,6 +661,46 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         );
     }
 
+    /**
+     * Returns just the medicine_name for one medicine, or null if it
+     * doesn't exist. Used by the reminder trigger to build the SMS
+     * and notification text without loading the full Medicine row.
+     */
+    public String getMedicineName(int medicineId) {
+
+        SQLiteDatabase db =
+                getReadableDatabase();
+
+        Cursor cursor = null;
+
+        try {
+
+            cursor = db.query(
+                    TABLE_MEDICINES,
+                    new String[]{MEDICINE_NAME},
+                    MEDICINE_ID + "=?",
+                    new String[]{String.valueOf(medicineId)},
+                    null,
+                    null,
+                    null
+            );
+
+            if (cursor.moveToFirst()) {
+                return cursor.getString(
+                        cursor.getColumnIndexOrThrow(MEDICINE_NAME)
+                );
+            }
+
+            return null;
+
+        } finally {
+
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+    }
+
     public boolean updateMedicine(
             int userId,
             int medicineId,

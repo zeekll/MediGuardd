@@ -28,6 +28,13 @@ public class ReminderScheduler {
     public static final String SCHEDULED_AT_FORMAT = "yyyy-MM-dd HH:mm";
 
     /**
+     * How long a dose is allowed to sit PENDING before it's
+     * automatically flipped to MISSED (see step 5 of the reminder
+     * flow: "Missed if not taken on time window").
+     */
+    public static final long MISS_CHECK_WINDOW_MILLIS = 30 * 60 * 1000L;
+
+    /**
      * Reads this medicine's saved reminder, finds its next dose
      * occurrence after now, and schedules an exact alarm for it.
      * If the reminder is missing, disabled, or its active window
@@ -124,6 +131,49 @@ public class ReminderScheduler {
         }
 
         pendingIntent.cancel();
+    }
+
+    /**
+     * Schedules the miss-check deadline for one triggered dose:
+     * fires MISS_CHECK_WINDOW_MILLIS after the dose's scheduled
+     * time, giving DoseMissCheckReceiver a chance to flip an
+     * un-confirmed PENDING dose over to MISSED.
+     */
+    public static void scheduleMissCheck(
+            Context context,
+            int userId,
+            int medicineId,
+            String scheduledAt
+    ) {
+
+        Intent intent = new Intent(context, DoseMissCheckReceiver.class);
+
+        intent.putExtra(EXTRA_USER_ID, userId);
+        intent.putExtra(EXTRA_MEDICINE_ID, medicineId);
+        intent.putExtra(EXTRA_SCHEDULED_AT, scheduledAt);
+
+        PendingIntent pendingIntent =
+                PendingIntent.getBroadcast(
+                        context,
+                        missCheckRequestCode(medicineId),
+                        intent,
+                        PendingIntent.FLAG_UPDATE_CURRENT
+                                | PendingIntent.FLAG_IMMUTABLE
+                );
+
+        AlarmManager alarmManager =
+                (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+
+        if (alarmManager == null) {
+            Log.e(TAG, "AlarmManager unavailable, cannot schedule miss-check.");
+            return;
+        }
+
+        setExactAlarm(
+                alarmManager,
+                System.currentTimeMillis() + MISS_CHECK_WINDOW_MILLIS,
+                pendingIntent
+        );
     }
 
     private static void setExactAlarm(

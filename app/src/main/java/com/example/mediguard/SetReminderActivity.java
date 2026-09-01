@@ -1,11 +1,14 @@
 package com.example.mediguard;
 
+import android.Manifest;
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.MotionEvent;
@@ -18,7 +21,12 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
+
+import java.util.List;
 
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
@@ -45,6 +53,13 @@ public class SetReminderActivity extends AppCompatActivity {
     // =====================================================
 
     private DatabaseHelper databaseHelper;
+
+    // =====================================================
+    // PERMISSIONS (needed for the SMS + notification sent
+    // when a dose is triggered)
+    // =====================================================
+
+    private ActivityResultLauncher<String[]> requestReminderPermissionsLauncher;
 
     // =====================================================
     // INPUTS
@@ -152,6 +167,13 @@ public class SetReminderActivity extends AppCompatActivity {
 
         databaseHelper =
                 new DatabaseHelper(this);
+
+        requestReminderPermissionsLauncher = registerForActivityResult(
+                new ActivityResultContracts.RequestMultiplePermissions(),
+                result -> { /* SMS/notifications just degrade gracefully if denied */ }
+        );
+
+        requestReminderPermissionsIfNeeded();
 
         userId =
                 getIntent().getIntExtra(
@@ -2532,6 +2554,38 @@ public class SetReminderActivity extends AppCompatActivity {
     // =====================================================
     // SAVE REMINDER
     // =====================================================
+
+    // =====================================================
+    // PERMISSIONS
+    // =====================================================
+
+    /**
+     * Requests SEND_SMS and (on Android 13+) POST_NOTIFICATIONS up
+     * front, since both are needed for the reminder trigger to alert
+     * the person once this reminder is saved and enabled.
+     */
+    private void requestReminderPermissionsIfNeeded() {
+
+        List<String> missing = new ArrayList<>();
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.SEND_SMS)
+                != PackageManager.PERMISSION_GRANTED) {
+            missing.add(Manifest.permission.SEND_SMS);
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                && ContextCompat.checkSelfPermission(
+                this, Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED) {
+            missing.add(Manifest.permission.POST_NOTIFICATIONS);
+        }
+
+        if (!missing.isEmpty()) {
+            requestReminderPermissionsLauncher.launch(
+                    missing.toArray(new String[0])
+            );
+        }
+    }
 
     private void saveReminder() {
 
