@@ -9,7 +9,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "MediGuard.db";
-    private static final int DATABASE_VERSION = 6;
+    private static final int DATABASE_VERSION = 7;
 
     // =====================================================
     // USERS
@@ -86,6 +86,35 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String REMINDER_ENABLED =
             "enabled";
 
+    // =====================================================
+    // DOSE LOGS (per-occurrence status: PENDING / TAKEN / MISSED)
+    // =====================================================
+
+    private static final String TABLE_DOSE_LOGS =
+            "dose_logs";
+
+    private static final String DOSE_LOG_ID =
+            "log_id";
+
+    private static final String DOSE_LOG_USER_ID =
+            "user_id";
+
+    private static final String DOSE_LOG_MEDICINE_ID =
+            "medicine_id";
+
+    private static final String DOSE_LOG_SCHEDULED_AT =
+            "scheduled_at";
+
+    private static final String DOSE_LOG_STATUS =
+            "status";
+
+    private static final String DOSE_LOG_TAKEN_AT =
+            "taken_at";
+
+    public static final String DOSE_STATUS_PENDING = "PENDING";
+    public static final String DOSE_STATUS_TAKEN = "TAKEN";
+    public static final String DOSE_STATUS_MISSED = "MISSED";
+
     public DatabaseHelper(Context context) {
         super(
                 context,
@@ -100,6 +129,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         createUsersTable(db);
         createMedicinesTable(db);
         createReminderTable(db);
+        createDoseLogTable(db);
     }
 
     private void createUsersTable(SQLiteDatabase db) {
@@ -191,6 +221,36 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.execSQL(sql);
     }
 
+    private void createDoseLogTable(SQLiteDatabase db) {
+
+        String sql =
+                "CREATE TABLE IF NOT EXISTS " +
+                        TABLE_DOSE_LOGS +
+                        " (" +
+                        DOSE_LOG_ID +
+                        " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                        DOSE_LOG_USER_ID +
+                        " INTEGER NOT NULL, " +
+                        DOSE_LOG_MEDICINE_ID +
+                        " INTEGER NOT NULL, " +
+                        DOSE_LOG_SCHEDULED_AT +
+                        " TEXT NOT NULL, " +
+                        DOSE_LOG_STATUS +
+                        " TEXT NOT NULL DEFAULT '" +
+                        DOSE_STATUS_PENDING +
+                        "', " +
+                        DOSE_LOG_TAKEN_AT +
+                        " TEXT, " +
+                        "UNIQUE(" +
+                        DOSE_LOG_MEDICINE_ID +
+                        ", " +
+                        DOSE_LOG_SCHEDULED_AT +
+                        ")" +
+                        ")";
+
+        db.execSQL(sql);
+    }
+
     @Override
     public void onUpgrade(
             SQLiteDatabase db,
@@ -200,6 +260,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         ensureMedicineUserId(db);
         createReminderTable(db);
         ensureReminderColumns(db);
+        createDoseLogTable(db);
     }
 
     @Override
@@ -213,6 +274,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         ensureMedicineUserId(db);
         createReminderTable(db);
         ensureReminderColumns(db);
+        createDoseLogTable(db);
     }
 
     private void ensureReminderColumns(SQLiteDatabase db) {
@@ -853,5 +915,292 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         cursor.close();
 
         return exists;
+    }
+
+    /**
+     * Returns the saved reminder for one medicine as a ReminderConfig,
+     * or null if this medicine has no reminder set up.
+     */
+    public ReminderConfig getReminderConfig(
+            int userId,
+            int medicineId
+    ) {
+
+        Cursor cursor =
+                getReminderForMedicine(
+                        userId,
+                        medicineId
+                );
+
+        ReminderConfig config = null;
+
+        if (cursor.moveToFirst()) {
+
+            config = new ReminderConfig(
+                    cursor.getInt(
+                            cursor.getColumnIndexOrThrow(REMINDER_ID)
+                    ),
+                    cursor.getInt(
+                            cursor.getColumnIndexOrThrow(REMINDER_USER_ID)
+                    ),
+                    cursor.getInt(
+                            cursor.getColumnIndexOrThrow(REMINDER_MEDICINE_ID)
+                    ),
+                    cursor.getString(
+                            cursor.getColumnIndexOrThrow(REMINDER_DOSE)
+                    ),
+                    cursor.getString(
+                            cursor.getColumnIndexOrThrow(REMINDER_DOSE_UNIT)
+                    ),
+                    cursor.getString(
+                            cursor.getColumnIndexOrThrow(REMINDER_START_TIME)
+                    ),
+                    cursor.getString(
+                            cursor.getColumnIndexOrThrow(REMINDER_START_DATE)
+                    ),
+                    cursor.getInt(
+                            cursor.getColumnIndexOrThrow(REMINDER_REPEAT_HOURS)
+                    ),
+                    cursor.getString(
+                            cursor.getColumnIndexOrThrow(REMINDER_DAYS)
+                    ),
+                    cursor.getInt(
+                            cursor.getColumnIndexOrThrow(REMINDER_DURATION_DAYS)
+                    ),
+                    cursor.getString(
+                            cursor.getColumnIndexOrThrow(REMINDER_SCHEDULE_TYPE)
+                    ),
+                    cursor.getString(
+                            cursor.getColumnIndexOrThrow(REMINDER_CUSTOM_SCHEDULE)
+                    ),
+                    cursor.getString(
+                            cursor.getColumnIndexOrThrow(REMINDER_CONTACT)
+                    ),
+                    cursor.getInt(
+                            cursor.getColumnIndexOrThrow(REMINDER_ENABLED)
+                    ) == 1
+            );
+        }
+
+        cursor.close();
+
+        return config;
+    }
+
+    // =====================================================
+    // DOSE LOGS
+    // =====================================================
+
+    /**
+     * Creates the PENDING row for a scheduled dose when its alarm
+     * fires. Uses CONFLICT_IGNORE on (medicine_id, scheduled_at) so
+     * a duplicate alarm firing twice cannot create two rows.
+     *
+     * @return true if a new row was inserted, false if one already
+     * existed for this dose.
+     */
+    public boolean insertDoseLogIfAbsent(
+            int userId,
+            int medicineId,
+            String scheduledAt
+    ) {
+
+        SQLiteDatabase db =
+                getWritableDatabase();
+
+        ContentValues values =
+                new ContentValues();
+
+        values.put(
+                DOSE_LOG_USER_ID,
+                userId
+        );
+
+        values.put(
+                DOSE_LOG_MEDICINE_ID,
+                medicineId
+        );
+
+        values.put(
+                DOSE_LOG_SCHEDULED_AT,
+                scheduledAt
+        );
+
+        values.put(
+                DOSE_LOG_STATUS,
+                DOSE_STATUS_PENDING
+        );
+
+        long result =
+                db.insertWithOnConflict(
+                        TABLE_DOSE_LOGS,
+                        null,
+                        values,
+                        SQLiteDatabase.CONFLICT_IGNORE
+                );
+
+        return result != -1;
+    }
+
+    /**
+     * Flips a dose from PENDING to TAKEN. No-ops (returns false) if
+     * the dose isn't currently PENDING, so a late tap can't overwrite
+     * a dose already marked MISSED.
+     */
+    public boolean markDoseTaken(
+            int userId,
+            int medicineId,
+            String scheduledAt,
+            String takenAt
+    ) {
+
+        SQLiteDatabase db =
+                getWritableDatabase();
+
+        ContentValues values =
+                new ContentValues();
+
+        values.put(
+                DOSE_LOG_STATUS,
+                DOSE_STATUS_TAKEN
+        );
+
+        values.put(
+                DOSE_LOG_TAKEN_AT,
+                takenAt
+        );
+
+        int result =
+                db.update(
+                        TABLE_DOSE_LOGS,
+                        values,
+                        DOSE_LOG_USER_ID +
+                                "=? AND " +
+                                DOSE_LOG_MEDICINE_ID +
+                                "=? AND " +
+                                DOSE_LOG_SCHEDULED_AT +
+                                "=? AND " +
+                                DOSE_LOG_STATUS +
+                                "=?",
+                        new String[]{
+                                String.valueOf(userId),
+                                String.valueOf(medicineId),
+                                scheduledAt,
+                                DOSE_STATUS_PENDING
+                        }
+                );
+
+        return result > 0;
+    }
+
+    /**
+     * Flips a dose from PENDING to MISSED. No-ops (returns false) if
+     * the dose was already marked TAKEN before the deadline.
+     */
+    public boolean markDoseMissed(
+            int userId,
+            int medicineId,
+            String scheduledAt
+    ) {
+
+        SQLiteDatabase db =
+                getWritableDatabase();
+
+        ContentValues values =
+                new ContentValues();
+
+        values.put(
+                DOSE_LOG_STATUS,
+                DOSE_STATUS_MISSED
+        );
+
+        int result =
+                db.update(
+                        TABLE_DOSE_LOGS,
+                        values,
+                        DOSE_LOG_USER_ID +
+                                "=? AND " +
+                                DOSE_LOG_MEDICINE_ID +
+                                "=? AND " +
+                                DOSE_LOG_SCHEDULED_AT +
+                                "=? AND " +
+                                DOSE_LOG_STATUS +
+                                "=?",
+                        new String[]{
+                                String.valueOf(userId),
+                                String.valueOf(medicineId),
+                                scheduledAt,
+                                DOSE_STATUS_PENDING
+                        }
+                );
+
+        return result > 0;
+    }
+
+    /**
+     * Returns the dose_logs row for one specific scheduled dose, or
+     * null if it hasn't been triggered yet (still Upcoming).
+     */
+    public Cursor getDoseLog(
+            int userId,
+            int medicineId,
+            String scheduledAt
+    ) {
+
+        SQLiteDatabase db =
+                getReadableDatabase();
+
+        return db.query(
+                TABLE_DOSE_LOGS,
+                null,
+                DOSE_LOG_USER_ID +
+                        "=? AND " +
+                        DOSE_LOG_MEDICINE_ID +
+                        "=? AND " +
+                        DOSE_LOG_SCHEDULED_AT +
+                        "=?",
+                new String[]{
+                        String.valueOf(userId),
+                        String.valueOf(medicineId),
+                        scheduledAt
+                },
+                null,
+                null,
+                null
+        );
+    }
+
+    /**
+     * Returns all dose_logs rows for one medicine on one calendar
+     * day (datePrefix format "yyyy-MM-dd"), ordered earliest first.
+     */
+    public Cursor getDoseLogsForDate(
+            int userId,
+            int medicineId,
+            String datePrefix
+    ) {
+
+        SQLiteDatabase db =
+                getReadableDatabase();
+
+        return db.query(
+                TABLE_DOSE_LOGS,
+                null,
+                DOSE_LOG_USER_ID +
+                        "=? AND " +
+                        DOSE_LOG_MEDICINE_ID +
+                        "=? AND " +
+                        DOSE_LOG_SCHEDULED_AT +
+                        " LIKE ?",
+                new String[]{
+                        String.valueOf(userId),
+                        String.valueOf(medicineId),
+                        datePrefix + "%"
+                },
+                null,
+                null,
+                DOSE_LOG_SCHEDULED_AT +
+                        " ASC"
+        );
     }
 }

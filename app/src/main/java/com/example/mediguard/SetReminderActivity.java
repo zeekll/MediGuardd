@@ -2729,6 +2729,12 @@ public class SetReminderActivity extends AppCompatActivity {
                 return;
             }
 
+            ReminderScheduler.scheduleNext(
+                    this,
+                    userId,
+                    medicineId
+            );
+
             Toast.makeText(
                     this,
                     "Reminder saved successfully.",
