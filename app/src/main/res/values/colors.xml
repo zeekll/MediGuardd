@@ -19,6 +19,14 @@
     <color name="greenBadge">#2E7D32</color>
     <color name="greenBadgeBg">#E8F5E9</color>
 
+    <!-- Dose status badges (Today's Schedule) -->
+    <color name="pendingBadgeText">#FB8C00</color>
+    <color name="pendingBadgeBg">#FFF3E0</color>
+    <color name="upcomingBadgeText">#1565F9</color>
+    <color name="upcomingBadgeBg">#EAF4FF</color>
+    <color name="missedBadgeText">#E53935</color>
+    <color name="missedBadgeBg">#FDECEA</color>
+
     <!-- ================= STATUS ================= -->
     <color name="success">#43A047</color>
     <color name="warning">#FB8C00</color>

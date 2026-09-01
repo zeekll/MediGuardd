@@ -5,24 +5,18 @@ import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
-
 /**
  * Fired by AlarmManager at a dose's scheduled time.
  *
- * Step 3: inserts the PENDING dose_log row, sends the SMS, shows
- * the "time to take your medicine" notification, and schedules the
- * miss-check deadline alarm.
+ * Inserts the PENDING dose_log row for this occurrence and starts its
+ * miss-check countdown (step 3's data side, which steps 4 and 5 rely
+ * on). Sending the actual SMS / showing a heads-up notification is
+ * still a TODO -- the status still flips to PENDING and, if unconfirmed,
+ * to MISSED, but the person currently has to open the app to see it.
  */
 public class ReminderTriggerReceiver extends BroadcastReceiver {
 
     private static final String TAG = "ReminderTrigger";
-
-    private static final SimpleDateFormat DISPLAY_TIME_FORMAT =
-            new SimpleDateFormat("h:mm a", Locale.US);
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -47,81 +41,36 @@ public class ReminderTriggerReceiver extends BroadcastReceiver {
         );
 
         if (userId != -1 && medicineId != -1 && scheduledAt != null) {
-            handleDoseTriggered(context, userId, medicineId, scheduledAt);
+
+            DatabaseHelper databaseHelper = new DatabaseHelper(context);
+
+            // Reminder may have been turned OFF between when this
+            // alarm was set and when it fired -- don't create a
+            // PENDING dose or miss-check for a reminder that's OFF.
+            ReminderConfig config =
+                    databaseHelper.getReminderConfig(userId, medicineId);
+
+            if (config != null && config.isEnabled()) {
+
+                databaseHelper.insertDoseLogIfAbsent(
+                        userId, medicineId, scheduledAt
+                );
+
+                ReminderScheduler.scheduleMissCheck(
+                        context,
+                        userId,
+                        medicineId,
+                        scheduledAt,
+                        System.currentTimeMillis()
+                );
+
+                // TODO (step 3): send the SMS and show the "time to
+                // take your medicine" heads-up notification here.
+            }
         }
 
         // Always schedule the following occurrence so the reminder
-        // keeps repeating regardless of how this occurrence's own
-        // SMS/notification/dose_log handling above turned out.
+        // keeps repeating.
         ReminderScheduler.scheduleNext(context, userId, medicineId);
-    }
-
-    private void handleDoseTriggered(
-            Context context,
-            int userId,
-            int medicineId,
-            String scheduledAt
-    ) {
-
-        DatabaseHelper databaseHelper = new DatabaseHelper(context);
-
-        // Status automatically changes to PENDING when the scheduled
-        // time is reached. insertDoseLogIfAbsent() is a no-op if this
-        // occurrence was already logged (e.g. receiver re-delivery).
-        databaseHelper.insertDoseLogIfAbsent(userId, medicineId, scheduledAt);
-
-        ReminderConfig config =
-                databaseHelper.getReminderConfig(userId, medicineId);
-
-        String medicineName = databaseHelper.getMedicineName(medicineId);
-
-        if (config == null || medicineName == null) {
-            Log.e(
-                    TAG,
-                    "Missing reminder config or medicine, skipping SMS/notification."
-            );
-            return;
-        }
-
-        String scheduledTimeDisplay = formatDisplayTime(scheduledAt);
-
-        ReminderSmsSender.sendDoseDueSms(
-                context,
-                config.getContactNumber(),
-                medicineName,
-                config.getDose(),
-                config.getDoseUnit(),
-                scheduledTimeDisplay
-        );
-
-        ReminderNotifier.showDoseDueNotification(
-                context,
-                medicineId,
-                medicineName,
-                config.getDose(),
-                config.getDoseUnit(),
-                scheduledTimeDisplay
-        );
-
-        // Kung hindi ma-confirm sa loob ng time window, automatic na
-        // magiging MISSED ang dose (step 5).
-        ReminderScheduler.scheduleMissCheck(context, userId, medicineId, scheduledAt);
-    }
-
-    private String formatDisplayTime(String scheduledAt) {
-
-        try {
-
-            Date parsed = new SimpleDateFormat(
-                    ReminderScheduler.SCHEDULED_AT_FORMAT, Locale.US
-            ).parse(scheduledAt);
-
-            return parsed != null
-                    ? DISPLAY_TIME_FORMAT.format(parsed)
-                    : scheduledAt;
-
-        } catch (ParseException e) {
-            return scheduledAt;
-        }
     }
 }

@@ -37,6 +37,7 @@ public class MedicineDetailsActivity extends AppCompatActivity {
 
     private MaterialButton btnEdit;
     private MaterialButton btnDelete;
+    private MaterialButton btnSetReminder;
 
     private ImageView imgPillIcon;
     private MaterialCardView cardPhotoPreview;
@@ -67,6 +68,7 @@ public class MedicineDetailsActivity extends AppCompatActivity {
 
         btnEdit = findViewById(R.id.btnEdit);
         btnDelete = findViewById(R.id.btnDelete);
+        btnSetReminder = findViewById(R.id.btnSetReminder);
 
         imgPillIcon = findViewById(R.id.imgPillIcon);
         cardPhotoPreview = findViewById(R.id.cardPhotoPreview);
@@ -140,6 +142,12 @@ public class MedicineDetailsActivity extends AppCompatActivity {
                 );
             }
         }
+
+        // ==========================
+        // Set Reminder / View Reminder Button
+        // ==========================
+
+        setupReminderButton();
 
         // ==========================
         // Back Button
@@ -274,6 +282,66 @@ public class MedicineDetailsActivity extends AppCompatActivity {
             startActivity(intent);
             finish();
         });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        setupReminderButton();
+    }
+
+    // ==========================
+    // SET REMINDER / VIEW REMINDER
+    // ==========================
+
+    private void setupReminderButton() {
+
+        boolean hasReminder =
+                databaseHelper.hasReminder(userId, medicineId);
+
+        if (hasReminder) {
+
+            btnSetReminder.setText("View Reminder");
+
+            btnSetReminder.setOnClickListener(v -> {
+
+                Intent intent = new Intent(
+                        MedicineDetailsActivity.this,
+                        ReminderDetailsActivity.class
+                );
+
+                intent.putExtra("user_id", userId);
+                intent.putExtra("medicine_id", medicineId);
+                intent.putExtra("medicine_name", txtName.getText().toString());
+                intent.putExtra("medicine_type", txtType.getText().toString());
+                intent.putExtra("medicine_photo", medicinePhotoPath);
+
+                startActivity(intent);
+            });
+
+        } else {
+
+            btnSetReminder.setText("Set Reminder");
+
+            btnSetReminder.setOnClickListener(v -> {
+
+                Intent intent = new Intent(
+                        MedicineDetailsActivity.this,
+                        SelectMedicineActivity.class
+                );
+
+                intent.putExtra("medicine_id", medicineId);
+                intent.putExtra("user_id", userId);
+                intent.putExtra("medicine_name", txtName.getText().toString());
+                intent.putExtra("medicine_purpose", txtPurpose.getText().toString());
+                intent.putExtra("medicine_type", txtType.getText().toString());
+                intent.putExtra("medicine_quantity", txtQuantity.getText().toString());
+                intent.putExtra("medicine_expiry", txtExpiry.getText().toString());
+                intent.putExtra("medicine_photo", medicinePhotoPath);
+
+                startActivity(intent);
+            });
+        }
     }
 
     // ==========================

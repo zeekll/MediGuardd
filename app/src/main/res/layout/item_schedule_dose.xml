@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingVertical="10dp">
+
+    <View
+        android:id="@+id/dotStatus"
+        android:layout_width="10dp"
+        android:layout_height="10dp"
+        android:layout_marginEnd="14dp"
+        android:background="@drawable/bg_status_dot"/>
+
+    <TextView
+        android:id="@+id/txtDoseTime"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="8:00 AM"
+        android:textColor="#1B2A4E"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        android:minWidth="76dp"/>
+
+    <TextView
+        android:id="@+id/txtDoseAmount"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginStart="8dp"
+        android:text="5 mL"
+        android:textColor="#6B7280"
+        android:textSize="15sp"/>
+
+    <TextView
+        android:id="@+id/txtDoseStatus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="12dp"
+        android:paddingVertical="4dp"
+        android:text="Upcoming"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:background="@drawable/bg_status_badge"/>
+
+</LinearLayout>

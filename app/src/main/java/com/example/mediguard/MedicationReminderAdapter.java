@@ -89,9 +89,13 @@ public class MedicationReminderAdapter
 
         holder.itemView.setOnClickListener(v -> {
 
+            // A saved reminder already exists for medicines shown in
+            // this Alerts list, so tapping one opens its schedule
+            // (view/mark-as-taken/missed/on-off) instead of the
+            // "set up a new reminder" flow.
             Intent intent = new Intent(
                     context,
-                    SelectMedicineActivity.class
+                    ReminderDetailsActivity.class
             );
 
             intent.putExtra(
@@ -110,11 +114,6 @@ public class MedicationReminderAdapter
             );
 
             intent.putExtra(
-                    "medicine_purpose",
-                    medicine.getPurpose()
-            );
-
-            intent.putExtra(
                     "medicine_type",
                     medicine.getType()
             );
@@ -124,11 +123,6 @@ public class MedicationReminderAdapter
                     medicine.getQuantity()
                             + " "
                             + medicine.getUnit()
-            );
-
-            intent.putExtra(
-                    "medicine_expiry",
-                    medicine.getExpiryDate()
             );
 
             intent.putExtra(

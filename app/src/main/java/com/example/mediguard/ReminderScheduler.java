@@ -28,11 +28,11 @@ public class ReminderScheduler {
     public static final String SCHEDULED_AT_FORMAT = "yyyy-MM-dd HH:mm";
 
     /**
-     * How long a dose is allowed to sit PENDING before it's
-     * automatically flipped to MISSED (see step 5 of the reminder
-     * flow: "Missed if not taken on time window").
+     * How long a dose stays PENDING before it auto-flips to MISSED
+     * (matches "Missed Dose" copy: "hindi na-confirm sa loob ng
+     * time window").
      */
-    public static final long MISS_CHECK_WINDOW_MILLIS = 30 * 60 * 1000L;
+    public static final int MISS_WINDOW_MINUTES = 30;
 
     /**
      * Reads this medicine's saved reminder, finds its next dose
@@ -134,19 +134,20 @@ public class ReminderScheduler {
     }
 
     /**
-     * Schedules the miss-check deadline for one triggered dose:
-     * fires MISS_CHECK_WINDOW_MILLIS after the dose's scheduled
-     * time, giving DoseMissCheckReceiver a chance to flip an
-     * un-confirmed PENDING dose over to MISSED.
+     * Schedules the "still not confirmed" deadline check for one
+     * dose, MISS_WINDOW_MINUTES after it was triggered. Fired by
+     * ReminderTriggerReceiver right after it creates the PENDING
+     * dose_log row.
      */
     public static void scheduleMissCheck(
             Context context,
             int userId,
             int medicineId,
-            String scheduledAt
+            String scheduledAt,
+            long triggeredAtMillis
     ) {
 
-        Intent intent = new Intent(context, DoseMissCheckReceiver.class);
+        Intent intent = new Intent(context, MissCheckReceiver.class);
 
         intent.putExtra(EXTRA_USER_ID, userId);
         intent.putExtra(EXTRA_MEDICINE_ID, medicineId);
@@ -169,11 +170,82 @@ public class ReminderScheduler {
             return;
         }
 
-        setExactAlarm(
-                alarmManager,
-                System.currentTimeMillis() + MISS_CHECK_WINDOW_MILLIS,
-                pendingIntent
-        );
+        long triggerAtMillis =
+                triggeredAtMillis
+                        + (MISS_WINDOW_MINUTES * 60_000L);
+
+        setExactAlarm(alarmManager, triggerAtMillis, pendingIntent);
+    }
+
+    /**
+     * Pushes a dose's miss-check deadline "minutes" further into the
+     * future from right now (used by the "Snooze 15 min" action on
+     * the reminder detail screen). The dose stays PENDING either way
+     * -- this only buys more time before it can auto-flip to MISSED.
+     */
+    public static void snoozeMissCheck(
+            Context context,
+            int userId,
+            int medicineId,
+            String scheduledAt,
+            int minutes
+    ) {
+
+        Intent intent = new Intent(context, MissCheckReceiver.class);
+
+        intent.putExtra(EXTRA_USER_ID, userId);
+        intent.putExtra(EXTRA_MEDICINE_ID, medicineId);
+        intent.putExtra(EXTRA_SCHEDULED_AT, scheduledAt);
+
+        PendingIntent pendingIntent =
+                PendingIntent.getBroadcast(
+                        context,
+                        missCheckRequestCode(medicineId),
+                        intent,
+                        PendingIntent.FLAG_UPDATE_CURRENT
+                                | PendingIntent.FLAG_IMMUTABLE
+                );
+
+        AlarmManager alarmManager =
+                (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+
+        if (alarmManager == null) {
+            Log.e(TAG, "AlarmManager unavailable, cannot snooze miss-check.");
+            return;
+        }
+
+        long triggerAtMillis =
+                System.currentTimeMillis() + (minutes * 60_000L);
+
+        setExactAlarm(alarmManager, triggerAtMillis, pendingIntent);
+    }
+
+    /**
+     * Cancels the pending miss-check deadline for a medicine. Called
+     * once a dose is confirmed Taken (or snoozed/rescheduled), so a
+     * dose that was already confirmed can't later flip to Missed.
+     */
+    public static void cancelMissCheck(Context context, int medicineId) {
+
+        Intent intent = new Intent(context, MissCheckReceiver.class);
+
+        PendingIntent pendingIntent =
+                PendingIntent.getBroadcast(
+                        context,
+                        missCheckRequestCode(medicineId),
+                        intent,
+                        PendingIntent.FLAG_UPDATE_CURRENT
+                                | PendingIntent.FLAG_IMMUTABLE
+                );
+
+        AlarmManager alarmManager =
+                (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+
+        if (alarmManager != null) {
+            alarmManager.cancel(pendingIntent);
+        }
+
+        pendingIntent.cancel();
     }
 
     private static void setExactAlarm(

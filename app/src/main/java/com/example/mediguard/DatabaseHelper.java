@@ -568,6 +568,38 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     // MEDICINES
     // =====================================================
 
+    /**
+     * Looks up a medicine's display name by id (no user_id needed —
+     * medicine_id is unique). Returns null if the medicine doesn't
+     * exist, e.g. it was deleted after an alarm was already scheduled.
+     */
+    public String getMedicineName(int medicineId) {
+
+        SQLiteDatabase db = getReadableDatabase();
+
+        Cursor cursor = db.query(
+                TABLE_MEDICINES,
+                new String[]{MEDICINE_NAME},
+                MEDICINE_ID + "=?",
+                new String[]{String.valueOf(medicineId)},
+                null,
+                null,
+                null
+        );
+
+        String name = null;
+
+        if (cursor.moveToFirst()) {
+            name = cursor.getString(
+                    cursor.getColumnIndexOrThrow(MEDICINE_NAME)
+            );
+        }
+
+        cursor.close();
+
+        return name;
+    }
+
     public boolean insertMedicine(
             int userId,
             String name,
@@ -662,43 +694,29 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     /**
-     * Returns just the medicine_name for one medicine, or null if it
-     * doesn't exist. Used by the reminder trigger to build the SMS
-     * and notification text without loading the full Medicine row.
+     * Medicines that already have a saved reminder (used by the
+     * Alerts list, so tapping an entry there always opens a real
+     * reminder instead of "This medicine has no saved reminder").
      */
-    public String getMedicineName(int medicineId) {
+    public Cursor getMedicinesWithReminders(
+            int userId
+    ) {
 
         SQLiteDatabase db =
                 getReadableDatabase();
 
-        Cursor cursor = null;
+        String sql =
+                "SELECT m.* FROM " +
+                        TABLE_MEDICINES + " m " +
+                        "INNER JOIN " + TABLE_REMINDERS + " r " +
+                        "ON m." + MEDICINE_ID + " = r." + REMINDER_MEDICINE_ID +
+                        " WHERE m." + MEDICINE_USER_ID + " = ? " +
+                        "ORDER BY m." + MEDICINE_ID + " DESC";
 
-        try {
-
-            cursor = db.query(
-                    TABLE_MEDICINES,
-                    new String[]{MEDICINE_NAME},
-                    MEDICINE_ID + "=?",
-                    new String[]{String.valueOf(medicineId)},
-                    null,
-                    null,
-                    null
-            );
-
-            if (cursor.moveToFirst()) {
-                return cursor.getString(
-                        cursor.getColumnIndexOrThrow(MEDICINE_NAME)
-                );
-            }
-
-            return null;
-
-        } finally {
-
-            if (cursor != null) {
-                cursor.close();
-            }
-        }
+        return db.rawQuery(
+                sql,
+                new String[]{String.valueOf(userId)}
+        );
     }
 
     public boolean updateMedicine(
@@ -911,6 +929,76 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 );
 
         return result != -1;
+    }
+
+    /**
+     * Flips only the ON/OFF switch for a medicine's saved reminder
+     * (used by the reminder detail screen's quick toggle). The
+     * schedule itself is left untouched -- turning OFF just stops
+     * future alerts/SMS; the reminder stays saved so it can be
+     * turned back ON later.
+     */
+    public boolean setReminderEnabled(
+            int userId,
+            int medicineId,
+            boolean enabled
+    ) {
+
+        SQLiteDatabase db =
+                getWritableDatabase();
+
+        ContentValues values =
+                new ContentValues();
+
+        values.put(
+                REMINDER_ENABLED,
+                enabled ? 1 : 0
+        );
+
+        int result =
+                db.update(
+                        TABLE_REMINDERS,
+                        values,
+                        REMINDER_USER_ID +
+                                "=? AND " +
+                                REMINDER_MEDICINE_ID +
+                                "=?",
+                        new String[]{
+                                String.valueOf(userId),
+                                String.valueOf(medicineId)
+                        }
+                );
+
+        return result > 0;
+    }
+
+    /**
+     * Deletes only the reminder/schedule for a medicine (the medicine
+     * itself and its dose history are left alone). Used by "Delete
+     * Reminder" on the reminder detail screen.
+     */
+    public boolean deleteReminder(
+            int userId,
+            int medicineId
+    ) {
+
+        SQLiteDatabase db =
+                getWritableDatabase();
+
+        int result =
+                db.delete(
+                        TABLE_REMINDERS,
+                        REMINDER_USER_ID +
+                                "=? AND " +
+                                REMINDER_MEDICINE_ID +
+                                "=?",
+                        new String[]{
+                                String.valueOf(userId),
+                                String.valueOf(medicineId)
+                        }
+                );
+
+        return result > 0;
     }
 
     public Cursor getReminderForMedicine(

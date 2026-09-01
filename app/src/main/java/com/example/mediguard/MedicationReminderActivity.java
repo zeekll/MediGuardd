@@ -95,7 +95,7 @@ public class MedicationReminderActivity extends AppCompatActivity {
 
         try {
 
-            cursor = databaseHelper.getAllMedicines(
+            cursor = databaseHelper.getMedicinesWithReminders(
                     userId
             );
 
