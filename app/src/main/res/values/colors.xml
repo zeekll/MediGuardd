@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- ================= PRIMARY COLORS ================= -->
+    <color name="bluePrimary">#2563EB</color>
+    <color name="blueLight">#EAF4FF</color>
+    <color name="blueDark">#1565C0</color>
+
+    <!-- ================= BACKGROUND ================= -->
+    <color name="background">#F7FAFF</color>
+    <color name="white">#FFFFFF</color>
+
+    <!-- ================= TEXT ================= -->
+    <color name="textDark">#1F2937</color>
+    <color name="textGray">#6B7280</color>
+    <color name="hintColor">#8A94A6</color>
+
+    <!-- ================= BADGES ================= -->
+    <color name="greenBadge">#2E7D32</color>
+    <color name="greenBadgeBg">#E8F5E9</color>
+
+    <!-- ================= STATUS ================= -->
+    <color name="success">#43A047</color>
+    <color name="warning">#FB8C00</color>
+    <color name="danger">#E53935</color>
+
+    <!-- ================= EXTRA ================= -->
+    <color name="divider">#E5E7EB</color>
+    <color name="cardShadow">#F1F5F9</color>
+
+</resources>
