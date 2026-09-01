@@ -156,7 +156,7 @@ public class MedicineRegistrationActivity extends AppCompatActivity {
         ArrayAdapter<String> typeAdapter =
                 new ArrayAdapter<>(
                         this,
-                        android.R.layout.simple_dropdown_item_1line,
+                        R.layout.item_dropdown,
                         medicineTypes);
 
         actMedicineType.setAdapter(typeAdapter);
@@ -171,13 +171,13 @@ public class MedicineRegistrationActivity extends AppCompatActivity {
         ArrayAdapter<String> piecesAdapter =
                 new ArrayAdapter<>(
                         this,
-                        android.R.layout.simple_dropdown_item_1line,
+                        R.layout.item_dropdown,
                         pieces);
 
         ArrayAdapter<String> mlAdapter =
                 new ArrayAdapter<>(
                         this,
-                        android.R.layout.simple_dropdown_item_1line,
+                        R.layout.item_dropdown,
                         ml);
 
         actUnit.setAdapter(piecesAdapter);
@@ -288,7 +288,7 @@ public class MedicineRegistrationActivity extends AppCompatActivity {
                     || quantity.isEmpty()
                     || unit.isEmpty()
                     || expiration.isEmpty()
-                    ) {
+            ) {
 
                 Toast.makeText(
                         MedicineRegistrationActivity.this,

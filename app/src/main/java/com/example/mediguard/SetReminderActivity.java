@@ -443,8 +443,7 @@ public class SetReminderActivity extends AppCompatActivity {
         ArrayAdapter<String> adapter =
                 new ArrayAdapter<>(
                         this,
-                        android.R.layout
-                                .simple_dropdown_item_1line,
+                        R.layout.item_dropdown,
                         units
                 );
 
@@ -793,8 +792,7 @@ public class SetReminderActivity extends AppCompatActivity {
         ArrayAdapter<String> adapter =
                 new ArrayAdapter<>(
                         this,
-                        android.R.layout
-                                .simple_dropdown_item_1line,
+                        R.layout.item_dropdown,
                         durationOptions
                 );
 

@@ -198,7 +198,9 @@
                     android:focusable="false"
                     android:textColor="#1B2A4E"
                     android:textColorHint="#777777"
-                    android:textSize="16sp" />
+                    android:textSize="16sp"
+                    android:popupBackground="@drawable/bg_dropdown_popup"
+                    android:dropDownVerticalOffset="4dp" />
 
             </com.google.android.material.textfield.TextInputLayout>
 
@@ -270,7 +272,9 @@
                         android:inputType="none"
                         android:textColor="#1B2A4E"
                         android:textColorHint="#777777"
-                        android:textSize="16sp" />
+                        android:textSize="16sp"
+                        android:popupBackground="@drawable/bg_dropdown_popup"
+                        android:dropDownVerticalOffset="4dp" />
 
                 </com.google.android.material.textfield.TextInputLayout>
 
