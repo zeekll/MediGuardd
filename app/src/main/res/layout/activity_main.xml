@@ -226,7 +226,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Coming Soon"
+                        android:text="View schedule &amp; alerts"
                         android:textColor="@color/greenBadge"
                         android:textStyle="bold"/>
 
