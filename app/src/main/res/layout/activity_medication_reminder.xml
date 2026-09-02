@@ -56,54 +56,67 @@
             android:padding="18dp"
             android:paddingBottom="36dp">
 
-            <!-- ================= CHOOSE A MEDICINE ================= -->
+            <!-- ================= REMINDER OVERVIEW ================= -->
 
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
-                android:layout_height="115dp"
+                android:layout_height="wrap_content"
                 app:cardCornerRadius="18dp"
                 app:cardElevation="2dp"
-                app:cardBackgroundColor="#EAF3FF"
-                app:strokeColor="#D6E7FF"
+                app:cardBackgroundColor="#F1E8F7"
+                app:strokeColor="#E2D6EA"
                 app:strokeWidth="1dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
+                    android:layout_height="wrap_content"
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
                     android:padding="16dp">
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        app:cardCornerRadius="14dp"
+                        app:cardBackgroundColor="#EAF3FF"
+                        app:cardElevation="0dp">
+
+                        <ImageView
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:padding="10dp"
+                            android:src="@drawable/ic_alarm"
+                            android:contentDescription="Medication reminder"
+                            app:tint="#1565F9"/>
+
+                    </com.google.android.material.card.MaterialCardView>
 
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
+                        android:layout_marginStart="14dp"
                         android:orientation="vertical">
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Choose a medicine"
+                            android:text="Reminder Overview"
                             android:textColor="#1B2A4E"
                             android:textSize="17sp"
                             android:textStyle="bold"/>
 
                         <TextView
+                            android:id="@+id/txtOverview"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
-                            android:text="to set a reminder."
+                            android:text="You have 0 saved reminders.\nTap a reminder to view its schedule."
                             android:textColor="#6B7280"
-                            android:textSize="14sp"/>
+                            android:textSize="14sp"
+                            android:lineSpacingExtra="2dp"/>
 
                     </LinearLayout>
-
-                    <ImageView
-                        android:layout_width="72dp"
-                        android:layout_height="72dp"
-                        android:src="@drawable/ic_alarm"
-                        android:contentDescription="Medication reminder"
-                        app:tint="#1565F9"/>
 
                 </LinearLayout>
 
@@ -124,11 +137,20 @@
 
             <!-- ================= MEDICINE LIST ================= -->
 
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="22dp"
+                android:text="Saved Reminders"
+                android:textColor="#1565F9"
+                android:textSize="17sp"
+                android:textStyle="bold"/>
+
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recyclerMedicines"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="18dp"
+                android:layout_marginTop="12dp"
                 android:nestedScrollingEnabled="false"/>
 
         </LinearLayout>

@@ -20,6 +20,7 @@ public class MedicationReminderActivity extends AppCompatActivity {
 
     private RecyclerView recyclerMedicines;
     private TextView txtEmpty;
+    private TextView txtOverview;
 
     private int userId;
 
@@ -45,6 +46,10 @@ public class MedicationReminderActivity extends AppCompatActivity {
 
         txtEmpty = findViewById(
                 R.id.txtEmpty
+        );
+
+        txtOverview = findViewById(
+                R.id.txtOverview
         );
 
         btnBack.setOnClickListener(
@@ -184,6 +189,14 @@ public class MedicationReminderActivity extends AppCompatActivity {
 
         recyclerMedicines.setAdapter(
                 adapter
+        );
+
+        int count = medicineList.size();
+
+        txtOverview.setText(
+                "You have " + count
+                        + (count == 1 ? " saved reminder.\n" : " saved reminders.\n")
+                        + "Tap a reminder to view its schedule."
         );
 
         if (medicineList.isEmpty()) {

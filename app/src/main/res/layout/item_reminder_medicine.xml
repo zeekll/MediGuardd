@@ -65,6 +65,48 @@
                 android:textColor="#6B7280"
                 android:textSize="15sp"/>
 
+            <TextView
+                android:id="@+id/txtDoseSchedule"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="5 mL  •  Every 6 hours"
+                android:textColor="#1B2A4E"
+                android:textSize="14sp"/>
+
+            <TextView
+                android:id="@+id/txtDateRange"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="Aug 21 – Sep 3, 2026"
+                android:textColor="#6B7280"
+                android:textSize="13sp"/>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <View
+                    android:id="@+id/dotReminderStatus"
+                    android:layout_width="8dp"
+                    android:layout_height="8dp"
+                    android:layout_marginEnd="6dp"
+                    android:background="@drawable/bg_status_dot"/>
+
+                <TextView
+                    android:id="@+id/txtReminderStatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Reminder ON"
+                    android:textSize="13sp"
+                    android:textStyle="bold"/>
+
+            </LinearLayout>
+
         </LinearLayout>
 
         <TextView
