@@ -86,6 +86,13 @@
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
 
+        <!-- Home "Medication Reminder" card: pick ANY medicine to set a
+             new reminder (kept separate from the Alerts tab list) -->
+        <activity
+            android:name=".ChooseMedicineReminderActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
         <!-- Reminder Trigger (AlarmManager fires this at dose time) -->
         <receiver
             android:name=".ReminderTriggerReceiver"
